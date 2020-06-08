@@ -1,0 +1,8 @@
+python 3.7
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+keras (c бэкэндом на Tensorflow)
+OpenCV

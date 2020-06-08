@@ -1,0 +1,6 @@
+1) conda env python 3
+2) cudnn > 9
+3) visualcppbuildtools_full.exe
+4) pip install cupy 
+5) data 
+https://drive.google.com/open?id=1lyK10eeiHkaIovXUtuSuUtvKbZ05C-7_
