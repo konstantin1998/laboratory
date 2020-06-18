@@ -81,7 +81,7 @@ class Example(QMainWindow, Ui_MainWindow):
         if (len(self.state['sorted_imgs']) == 0):
             self.state['sorted_imgs'].append(curr_img)
             curr_img = self.state['unsorted_imgs'].pop()
-            self.state['curr_img'] = curr_img
+        self.state['curr_img'] = curr_img
         closest_img_index = self.find_closest_img(curr_img['quality'])
         self.state['closest_img_index'] = closest_img_index
 
@@ -102,13 +102,13 @@ class Example(QMainWindow, Ui_MainWindow):
                 self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['right']]['quality'] + 2 * quality_difference
 
         left_fictitious_img = {'name': 'fictitious'}
-        if self.state['closest_img_index'] - self.state['left'] - 1 >= 0:
+        if self.state['closest_img_index'] + self.state['left'] - 1 >= 0:
             left_fictitious_img['quality'] = \
-                self.state['sorted_imgs'][self.state['closest_img_index'] - self.state['left'] - 1]['quality']
+                self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left'] - 1]['quality']
         else:
             quality_difference = 10
             left_fictitious_img['quality'] =\
-                self.state['sorted_imgs'][self.state['closest_img_index'] - self.state['left']]['quality'] - 2 * quality_difference
+                self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left']]['quality'] - 2 * quality_difference
 
         self.state['imgs_to_compare'] = [
             left_fictitious_img,
@@ -125,22 +125,22 @@ class Example(QMainWindow, Ui_MainWindow):
         curr_img_path = os.path.join(
             self.state['path_to_unsorted_images'],
             curr_img['name'])
-
+        """
         print('init comparing images')
         print('right:', self.state['right'])
         print('left:', self.state['left'])
         print('mid:', self.state['mid'])
-
+        """
         self.render_images(curr_img_path, closest_img_path)
 
     def search_lefter(self):
         print('search lefter')
-        print(self.state)
+        self.render()
         self.change_similar_img(self.state['left'], self.state['mid'])
 
     def search_righter(self):
         print('search righter')
-        print(self.state)
+        self.render()
         self.change_similar_img(self.state['mid'], self.state['right'])
 
     def find_closest_img(self, quality):
@@ -175,23 +175,28 @@ class Example(QMainWindow, Ui_MainWindow):
         return ternarySearchMin(self.state['sorted_imgs'], 0, len(self.state['sorted_imgs']) - 1, get_quality_difference)
 
     def change_similar_img(self, left, right):
+        """
         print('change similar image')
         print('left:', left)
         print('right:', right)
+        """
         curr_img = self.state['curr_img']
         mid = int((left + right) / 2)
         self.state['mid'] = mid
         if right - left == 1:
             left_img = self.state['imgs_to_compare'][left]
             right_img = self.state['imgs_to_compare'][right]
+            """
             print('left img:', left_img)
             print('right img:', right_img)
             print('curr img:', curr_img)
-            if not (left_img['quality'] <= curr_img['quality'] <= right_img['quality']):
+            """
+            if not ((left_img['quality'] <= curr_img['quality'] <= right_img['quality'])
+            or (right_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality'])
+            or (left_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality'])):
                 curr_img['quality'] = (left_img['quality'] + right_img['quality']) / 2
             print('index to insert:', self.state['closest_img_index'] + mid + 1)
             self.state['sorted_imgs'].insert(self.state['closest_img_index'] + mid + 1, curr_img)
-            #print('sorted images:', )
             self.init_comparing_imgs()
         else:
             similar_img = self.state['imgs_to_compare'][mid]
@@ -203,6 +208,15 @@ class Example(QMainWindow, Ui_MainWindow):
                 curr_img['name'])
             self.render_images(curr_img_path, similar_img_path)
 
+    def render(self):
+        print('state {')
+        print('    imgs to comp:', self.state['imgs_to_compare'])
+        print('    left:', self.state['left'])
+        print('    mid:', self.state['mid'])
+        print('    right:', self.state['right'])
+        print('    sorted:', self.state['sorted_imgs'])
+        print('    curr:', self.state['curr_img'])
+        print('}')
     def save(self):
         state_file = open("state.py", 'w')
         state_file.write('state=' + repr(self.state))
