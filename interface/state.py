@@ -1,0 +1,12 @@
+state={'path_to_unsorted_images': 'D:/Word/imgs',
+       'path_to_sorted_images': 'not_specified',
+       'unsorted_imgs': [{'name': 'St112L_4_V_46_S_629671.2562.bmp', 'quality': 997}, {'name': 'St112L_4_V_48_S_626634.1738.bmp', 'quality': 800}, {'name': 'St112L_4_V_50_S_624075.7667.bmp', 'quality': 834}, {'name': 'St112L_4_V_52_S_621672.4916.bmp', 'quality': 948}, {'name': 'St112L_4_V_54_S_619501.0536.bmp', 'quality': 657}, {'name': 'St112L_4_V_56_S_617731.8728.bmp', 'quality': 871}, {'name': 'St112L_4_V_58_S_616534.0086.bmp', 'quality': 992}, {'name': 'St112L_4_V_60_S_616678.2831.bmp', 'quality': 624}, {'name': 'St112L_4_V_62_S_618506.5305.bmp', 'quality': 563}, {'name': 'St112L_4_V_46_S_629671.2562.bmp', 'quality': 648}, {'name': 'St112L_4_V_48_S_626634.1738.bmp', 'quality': 740}, {'name': 'St112L_4_V_50_S_624075.7667.bmp', 'quality': 991}, {'name': 'St112L_4_V_52_S_621672.4916.bmp', 'quality': 510}, {'name': 'St112L_4_V_54_S_619501.0536.bmp', 'quality': 500}, {'name': 'St112L_4_V_56_S_617731.8728.bmp', 'quality': 974}, {'name': 'St112L_4_V_58_S_616534.0086.bmp', 'quality': 569}, {'name': 'St112L_4_V_60_S_616678.2831.bmp', 'quality': 515}, {'name': 'St112L_4_V_62_S_618506.5305.bmp', 'quality': 718}, {'name': 'St112L_4_V_64_S_622187.4392.bmp', 'quality': 711}, {'name': 'St112L_4_V_66_S_627337.8896.bmp', 'quality': 862}, {'name': 'St112L_4_V_68_S_633058.5493.bmp', 'quality': 641}, {'name': 'St112L_4_V_46_S_629671.2562.bmp', 'quality': 874}, {'name': 'St112L_4_V_48_S_626634.1738.bmp', 'quality': 820}, {'name': 'St112L_4_V_50_S_624075.7667.bmp', 'quality': 956}, {'name': 'St112L_4_V_52_S_621672.4916.bmp', 'quality': 865}, {'name': 'St112L_4_V_54_S_619501.0536.bmp', 'quality': 809}, {'name': 'St112L_4_V_56_S_617731.8728.bmp', 'quality': 995}, {'name': 'St112L_4_V_58_S_616534.0086.bmp', 'quality': 743}, {'name': 'St112L_4_V_60_S_616678.2831.bmp', 'quality': 883}, {'name': 'St112L_4_V_62_S_618506.5305.bmp', 'quality': 732}, {'name': 'St112L_4_V_64_S_622187.4392.bmp', 'quality': 707}, {'name': 'St112L_4_V_66_S_627337.8896.bmp', 'quality': 758}, {'name': 'St112L_4_V_68_S_633058.5493.bmp', 'quality': 598}],
+       'sorted_imgs': [],
+       'closest_img_index': None,
+       'left': None,
+       'right': None,
+       'mid': None,
+       'span': 8,
+       'curr_img': None,
+       'imgs_to_compare': []
+       }

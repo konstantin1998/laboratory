@@ -112,24 +112,24 @@ class Ui_MainWindow(object):
         self.label.setSizePolicy(sizePolicy)
         self.label.setText("")
         """
-        self.label.setPixmap(QtGui.QPixmap("St112L_4_V_54_S_619501.0536.bmp"))
+        self.label.setPixmap(QtGui.QPixmap("default2.bmp"))
         self.label.setScaledContents(True)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 1, 0, 1, 3)
         """
         self.curr_img = QtWidgets.QLabel(self.centralwidget)
-        self.curr_img.setPixmap(QtGui.QPixmap("St112L_4_V_54_S_619501.0536.bmp"))
+        self.curr_img.setPixmap(QtGui.QPixmap("default2.bmp"))
         self.curr_img.setScaledContents(True)
         self.curr_img.setObjectName("label")
         self.gridLayout.addWidget(self.curr_img, 1, 0, 1, 3)
 
         self.similar_img = QtWidgets.QLabel(self.centralwidget)
-        self.similar_img.setPixmap(QtGui.QPixmap("St112L_4_V_54_S_619501.0536.bmp"))
+        self.similar_img.setPixmap(QtGui.QPixmap("default2.bmp"))
         self.similar_img.setScaledContents(True)
         self.similar_img.setObjectName("label")
         self.gridLayout.addWidget(self.similar_img, 2, 0, 1, 3)
 
-        self.similar_img_metrix_label = self.get_metrix_label("St112L_4_V_54_S_619501.0536.bmp")
+        self.similar_img_metrix_label = self.get_metrix_label("default2.bmp")
         self.gridLayout.addWidget(self.similar_img_metrix_label, 1, 4)
         """
         self.change_img_btn = QtWidgets.QPushButton('change', self.centralwidget)
@@ -190,13 +190,13 @@ class Ui_MainWindow(object):
     def change_img(self):
         if (self.similar_img.objectName() == 'label'):
             self.similar_img = QtWidgets.QLabel(self.centralwidget)
-            self.similar_img.setPixmap(QtGui.QPixmap("St112L_4_V_32_S_649488.6091.bmp"))
+            self.similar_img.setPixmap(QtGui.QPixmap("default1.bmp"))
             self.similar_img.setScaledContents(True)
             self.similar_img.setObjectName("label1")
             self.gridLayout.addWidget(self.similar_img, 2, 0, 1, 3)
         else:
             self.similar_img = QtWidgets.QLabel(self.centralwidget)
-            self.similar_img.setPixmap(QtGui.QPixmap("St112L_4_V_54_S_619501.0536.bmp"))
+            self.similar_img.setPixmap(QtGui.QPixmap("default2.bmp"))
             self.similar_img.setScaledContents(True)
             self.similar_img.setObjectName("label")
             self.gridLayout.addWidget(self.similar_img, 2, 0, 1, 3)
