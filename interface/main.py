@@ -4,11 +4,10 @@
 import sys
 import os
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QFileDialog
 from interface.IQA.generated_gui import Ui_MainWindow
 from interface.IQA.quality_estimator.estimator import estimate_quality
 from interface.state import state
-#from interface.test import Example1
 
 class Example(QMainWindow, Ui_MainWindow):
 
@@ -37,6 +36,11 @@ class Example(QMainWindow, Ui_MainWindow):
         self.pushButton.clicked.connect(self.search_righter)
         self.pushButton_4.clicked.connect(self.save)
 
+        self.curr_metrix_lbl = QtWidgets.QLabel()
+        self.similar_metrix_lbl = QtWidgets.QLabel()
+        self.curr_img_lbl = QtWidgets.QLabel()
+        self.similar_img_lbl = QtWidgets.QLabel()
+
         if self.state['path_to_unsorted_images'] == 'not_specified':
             self.show_default_img()
         else:
@@ -54,24 +58,31 @@ class Example(QMainWindow, Ui_MainWindow):
 
     def render_images(self, curr_img_path = "IQA/default2.bmp", similar_img_path = "IQA/default1.bmp"):
         if (self.state['path_to_unsorted_images'] != 'not_specified'):
-            #print('curr image:', curr_img_path)
             self.curr_img = QtWidgets.QLabel(self.centralwidget)
             self.curr_img.setPixmap(QtGui.QPixmap(curr_img_path))
             self.curr_img.setScaledContents(True)
             self.curr_img.setObjectName("label")
-            self.gridLayout.addWidget(self.curr_img, 1, 0, 1, 3)
+            curr_img_box = QVBoxLayout()
+            self.curr_img_lbl.setText('Текущее изображение: ' + self.state['curr_img']['name'])
+            curr_img_box.addWidget(self.curr_img_lbl)
+            curr_img_box.addWidget(self.curr_img)
+            self.gridLayout.addLayout(curr_img_box, 1, 0, 1, 3)
             curr_img_quality = estimate_quality(curr_img_path)
-            curr_metrix_lbl = QtWidgets.QLabel('Метрика: ' + str(curr_img_quality))
-            self.gridLayout.addWidget(curr_metrix_lbl, 1, 4)
+            self.curr_metrix_lbl.setText('Метрика: ' + str(curr_img_quality))
+            self.gridLayout.addWidget(self.curr_metrix_lbl, 1, 4)
 
             self.similar_img = QtWidgets.QLabel(self.centralwidget)
             self.similar_img.setPixmap(QtGui.QPixmap(similar_img_path))
             self.similar_img.setScaledContents(True)
             self.similar_img.setObjectName("label")
-            self.gridLayout.addWidget(self.similar_img, 2, 0, 1, 3)
+            similar_img_box = QVBoxLayout()
+            self.similar_img_lbl.setText('Похожее изображение: ' + self.state['curr_img']['name'])
+            similar_img_box.addWidget(self.similar_img_lbl)
+            similar_img_box.addWidget(self.similar_img)
+            self.gridLayout.addLayout(similar_img_box, 2, 0, 1, 3)
             similar_img_quality = estimate_quality(similar_img_path)
-            similar_metrix_lbl = QtWidgets.QLabel('Метрика: ' + str(similar_img_quality))
-            self.gridLayout.addWidget(similar_metrix_lbl, 2, 4)
+            self.similar_metrix_lbl.setText('Метрика: ' + str(similar_img_quality))
+            self.gridLayout.addWidget(self.similar_metrix_lbl, 2, 4)
         else:
             error_lbl = QtWidgets.QLabel('Укажите директорию с изображениями')
             self.gridLayout.addWidget(error_lbl, 2, 1, 1, 3)
@@ -125,12 +136,6 @@ class Example(QMainWindow, Ui_MainWindow):
         curr_img_path = os.path.join(
             self.state['path_to_unsorted_images'],
             curr_img['name'])
-        """
-        print('init comparing images')
-        print('right:', self.state['right'])
-        print('left:', self.state['left'])
-        print('mid:', self.state['mid'])
-        """
         self.render_images(curr_img_path, closest_img_path)
 
     def search_lefter(self):
@@ -175,22 +180,12 @@ class Example(QMainWindow, Ui_MainWindow):
         return ternarySearchMin(self.state['sorted_imgs'], 0, len(self.state['sorted_imgs']) - 1, get_quality_difference)
 
     def change_similar_img(self, left, right):
-        """
-        print('change similar image')
-        print('left:', left)
-        print('right:', right)
-        """
         curr_img = self.state['curr_img']
         mid = int((left + right) / 2)
         self.state['mid'] = mid
         if right - left == 1:
             left_img = self.state['imgs_to_compare'][left]
             right_img = self.state['imgs_to_compare'][right]
-            """
-            print('left img:', left_img)
-            print('right img:', right_img)
-            print('curr img:', curr_img)
-            """
             if not ((left_img['quality'] <= curr_img['quality'] <= right_img['quality'])
             or (right_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality'])
             or (left_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality'])):
@@ -230,7 +225,7 @@ class Example(QMainWindow, Ui_MainWindow):
         self.gridLayout.addWidget(self.curr_img, 1, 0, 1, 3)
         self.specify_img_btn = QtWidgets.QPushButton("Загрузить", self)
         self.gridLayout.addWidget(self.specify_img_btn, 1, 4)
-        self.specify_img_btn.clicked.connect(self.render_images)
+        self.specify_img_btn.clicked.connect(self.init_comparing_imgs)
 
     def initialize_images(self):
         try:
