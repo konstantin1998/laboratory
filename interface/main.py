@@ -9,11 +9,11 @@ from interface.IQA.generated_gui import Ui_MainWindow
 from interface.IQA.quality_estimator.estimator import estimate_quality
 from interface.state import state
 
+
 class Example(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super(Example, self).__init__()
-
         self.setupUi(self)
         self.state = state
         plus_icon = QtGui.QIcon()
@@ -41,6 +41,9 @@ class Example(QMainWindow, Ui_MainWindow):
         self.curr_img_lbl = QtWidgets.QLabel()
         self.similar_img_lbl = QtWidgets.QLabel()
 
+        self.img_box = QVBoxLayout()
+        self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
+
         if self.state['path_to_unsorted_images'] == 'not_specified':
             self.show_default_img()
         else:
@@ -58,15 +61,16 @@ class Example(QMainWindow, Ui_MainWindow):
 
     def render_images(self, curr_img_path = "IQA/default2.bmp", similar_img_path = "IQA/default1.bmp"):
         if (self.state['path_to_unsorted_images'] != 'not_specified'):
+            self.gridLayout.removeItem(self.img_box)
             self.curr_img = QtWidgets.QLabel(self.centralwidget)
             self.curr_img.setPixmap(QtGui.QPixmap(curr_img_path))
             self.curr_img.setScaledContents(True)
             self.curr_img.setObjectName("label")
-            curr_img_box = QVBoxLayout()
+            self.img_box = QVBoxLayout()
             self.curr_img_lbl.setText('Текущее изображение: ' + self.state['curr_img']['name'])
-            curr_img_box.addWidget(self.curr_img_lbl)
-            curr_img_box.addWidget(self.curr_img)
-            self.gridLayout.addLayout(curr_img_box, 1, 0, 1, 3)
+            self.img_box.addWidget(self.curr_img_lbl)
+            self.img_box.addWidget(self.curr_img)
+            #self.gridLayout.addLayout(img_box, 1, 0, 1, 3)
             curr_img_quality = estimate_quality(curr_img_path)
             self.curr_metrix_lbl.setText('Метрика: ' + str(curr_img_quality))
             self.gridLayout.addWidget(self.curr_metrix_lbl, 1, 4)
@@ -75,11 +79,11 @@ class Example(QMainWindow, Ui_MainWindow):
             self.similar_img.setPixmap(QtGui.QPixmap(similar_img_path))
             self.similar_img.setScaledContents(True)
             self.similar_img.setObjectName("label")
-            similar_img_box = QVBoxLayout()
+            #similar_img_box = QVBoxLayout()
             self.similar_img_lbl.setText('Похожее изображение: ' + self.state['curr_img']['name'])
-            similar_img_box.addWidget(self.similar_img_lbl)
-            similar_img_box.addWidget(self.similar_img)
-            self.gridLayout.addLayout(similar_img_box, 2, 0, 1, 3)
+            self.img_box.addWidget(self.similar_img_lbl)
+            self.img_box.addWidget(self.similar_img)
+            self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
             similar_img_quality = estimate_quality(similar_img_path)
             self.similar_metrix_lbl.setText('Метрика: ' + str(similar_img_quality))
             self.gridLayout.addWidget(self.similar_metrix_lbl, 2, 4)
