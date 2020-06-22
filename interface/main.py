@@ -59,37 +59,36 @@ class Example(QMainWindow, Ui_MainWindow):
         state_file.write('state=' + repr(self.state))
         state_file.close()
 
-    def render_images(self, curr_img_path = "IQA/default2.bmp", similar_img_path = "IQA/default1.bmp"):
-        if (self.state['path_to_unsorted_images'] != 'not_specified'):
-            self.gridLayout.removeItem(self.img_box)
-            self.curr_img = QtWidgets.QLabel(self.centralwidget)
-            self.curr_img.setPixmap(QtGui.QPixmap(curr_img_path))
-            self.curr_img.setScaledContents(True)
-            self.curr_img.setObjectName("label")
-            self.img_box = QVBoxLayout()
-            self.curr_img_lbl.setText('Текущее изображение: ' + self.state['curr_img']['name'])
-            self.img_box.addWidget(self.curr_img_lbl)
-            self.img_box.addWidget(self.curr_img)
-            #self.gridLayout.addLayout(img_box, 1, 0, 1, 3)
-            curr_img_quality = estimate_quality(curr_img_path)
-            self.curr_metrix_lbl.setText('Метрика: ' + str(curr_img_quality))
-            self.gridLayout.addWidget(self.curr_metrix_lbl, 1, 4)
+    def render_images(self, curr_img ={'name': 'default2.bmp', 'quality':100}, similar_img ={'name': 'default1.bmp', 'quality':100}):
+        curr_img_path = os.path.join(self.state['path_to_unsorted_images'], curr_img['name'])
+        similar_img_path = os.path.join(self.state['path_to_unsorted_images'], similar_img['name'])
+        if (self.state['path_to_unsorted_images'] == 'not_specified'):
+            curr_img_path = 'IQA/default2.bmp'
+            similar_img_path = 'IQA/default1.bmp'
+        self.gridLayout.removeItem(self.img_box)
+        self.curr_img = QtWidgets.QLabel(self.centralwidget)
+        self.curr_img.setPixmap(QtGui.QPixmap(curr_img_path))
+        self.curr_img.setScaledContents(True)
+        self.curr_img.setObjectName("label")
+        self.img_box = QVBoxLayout()
+        self.curr_img_lbl.setText('Текущее изображение: ' + curr_img['name'])
+        self.img_box.addWidget(self.curr_img_lbl)
+        self.img_box.addWidget(self.curr_img)
+        self.curr_metrix_lbl.setText('Метрика: ' + str(curr_img['quality']))
+        self.gridLayout.addWidget(self.curr_metrix_lbl, 1, 4)
 
-            self.similar_img = QtWidgets.QLabel(self.centralwidget)
-            self.similar_img.setPixmap(QtGui.QPixmap(similar_img_path))
-            self.similar_img.setScaledContents(True)
-            self.similar_img.setObjectName("label")
-            #similar_img_box = QVBoxLayout()
-            self.similar_img_lbl.setText('Похожее изображение: ' + self.state['curr_img']['name'])
-            self.img_box.addWidget(self.similar_img_lbl)
-            self.img_box.addWidget(self.similar_img)
-            self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
-            similar_img_quality = estimate_quality(similar_img_path)
-            self.similar_metrix_lbl.setText('Метрика: ' + str(similar_img_quality))
-            self.gridLayout.addWidget(self.similar_metrix_lbl, 2, 4)
-        else:
-            error_lbl = QtWidgets.QLabel('Укажите директорию с изображениями')
-            self.gridLayout.addWidget(error_lbl, 2, 1, 1, 3)
+        self.similar_img = QtWidgets.QLabel(self.centralwidget)
+        self.similar_img.setPixmap(QtGui.QPixmap(similar_img_path))
+        self.similar_img.setScaledContents(True)
+        self.similar_img.setObjectName("label")
+        self.similar_img_lbl.setText('Похожее изображение: ' + similar_img['name'])
+        self.img_box.addWidget(self.similar_img_lbl)
+        self.img_box.addWidget(self.similar_img)
+        self.similar_metrix_lbl.setText('Метрика: ' + str(similar_img['quality']))
+        self.gridLayout.addWidget(self.similar_metrix_lbl, 2, 4)
+
+        self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
+
 
     def init_comparing_imgs(self):
         curr_img = self.state['unsorted_imgs'].pop()
@@ -134,13 +133,15 @@ class Example(QMainWindow, Ui_MainWindow):
         self.state['right'] += abs(self.state['left'])
         self.state['mid'] += abs(self.state['left'])
         self.state['left'] += abs(self.state['left'])
+        """
         closest_img_path = os.path.join(
             self.state['path_to_unsorted_images'],
             closest_img['name'])
         curr_img_path = os.path.join(
             self.state['path_to_unsorted_images'],
             curr_img['name'])
-        self.render_images(curr_img_path, closest_img_path)
+        """
+        self.render_images(curr_img, closest_img)
 
     def search_lefter(self):
         print('search lefter')
@@ -199,13 +200,15 @@ class Example(QMainWindow, Ui_MainWindow):
             self.init_comparing_imgs()
         else:
             similar_img = self.state['imgs_to_compare'][mid]
+            """
             similar_img_path = os.path.join(
                 self.state['path_to_unsorted_images'],
                 similar_img['name'])
             curr_img_path = os.path.join(
                 self.state['path_to_unsorted_images'],
                 curr_img['name'])
-            self.render_images(curr_img_path, similar_img_path)
+            """
+            self.render_images(curr_img, similar_img)
 
     def render(self):
         print('state {')
