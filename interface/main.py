@@ -3,12 +3,12 @@
 
 import sys
 import os
-from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QFileDialog
+from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QFileDialog, QDialog
 from interface.IQA.generated_gui import Ui_MainWindow
 from interface.IQA.quality_estimator.estimator import estimate_quality
 from interface.state import state
-
+from functools import partial
 
 class Example(QMainWindow, Ui_MainWindow):
 
@@ -29,7 +29,7 @@ class Example(QMainWindow, Ui_MainWindow):
         delete_icon.addPixmap(QtGui.QPixmap("IQA/stuff/gui_img/del.jpg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.pushButton_4.setIcon(delete_icon)
         self.action_3.setStatusTip('Выбрать директорию с изображениями')
-        self.action_3.triggered.connect(self.pick_img_dir)
+        self.action_3.triggered.connect(self.init_imgs)
         self.pushButton_2.setText("Отметить нижнее как лучшее")
         self.pushButton_2.clicked.connect(self.search_lefter)
         self.pushButton.setText("Отметить верхнее как лучшее")
@@ -40,26 +40,71 @@ class Example(QMainWindow, Ui_MainWindow):
         self.similar_metrix_lbl = QtWidgets.QLabel()
         self.curr_img_lbl = QtWidgets.QLabel()
         self.similar_img_lbl = QtWidgets.QLabel()
-
         self.img_box = QVBoxLayout()
         self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
-
+        """
+        self.centralwidget = QtWidgets.QWidget(self)
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.curr_img = QtWidgets.QLabel(self.centralwidget)
+        self.similar_img = QtWidgets.QLabel(self.centralwidget)
+        self.verticalLayout.addWidget(self.curr_img_lbl)
+        self.verticalLayout.addWidget(self.curr_img)
+        self.verticalLayout.addWidget(self.similar_img_lbl)
+        self.verticalLayout.addWidget(self.similar_img)
+        """
         if self.state['path_to_unsorted_images'] == 'not_specified':
-            self.show_default_img()
+            self.init_imgs()
         else:
             self.init_comparing_imgs()
 
         self.show()
 
-    def pick_img_dir(self):
+    def init_imgs(self):
+        d = QDialog()
+        d.setFixedSize(QtCore.QSize(600, 400))
+
+        instruction = QtWidgets.QLabel('Загрузите изображения', d)
+        instruction.move(230, 50)
+
+        progress_bar = QtWidgets.QProgressBar(d)
+        progress_bar.setFixedSize(QtCore.QSize(300, 30))
+        progress_bar.move(150, 100)
+
+        pick_ = partial(self.load_imgs, progress_bar)
+
+        load_btn = QtWidgets.QPushButton('Загрузить', d)
+        load_btn.move(250, 70)
+        load_btn.clicked.connect(pick_)
+
+        complete_btn = QtWidgets.QPushButton('Завершить', d)
+        complete_btn.move(250, 130)
+        complete_btn.clicked.connect(self.init_comparing_imgs)
+        complete_btn.clicked.connect(d.close)
+
+        d.setWindowTitle("Загрузить изображения")
+        d.setWindowModality(QtCore.Qt.ApplicationModal)
+        d.exec_()
+
+
+    def load_imgs(self, progress_bar):
         dir_name = QFileDialog.getExistingDirectory()
         self.state['path_to_unsorted_images'] = dir_name
-        self.initialize_images()
+
+        image_names = os.listdir(self.state['path_to_unsorted_images'])
+        for i in range(len(image_names)):
+            item = dict()
+            item['name'] = image_names[i]
+            self.state['loading'] = int((i + 1) / len(image_names)) * 100
+            progress_bar.setProperty("value", self.state['loading'])
+            item['quality'] = estimate_quality(os.path.join(self.state['path_to_unsorted_images'], image_names[i]))
+            self.state['unsorted_imgs'].append(item)
+
         state_file = open("state.py", 'w')
         state_file.write('state=' + repr(self.state))
         state_file.close()
 
-    def render_images(self, curr_img ={'name': 'default2.bmp', 'quality':100}, similar_img ={'name': 'default1.bmp', 'quality':100}):
+
+    def render_images(self, curr_img={'name': 'default2.bmp', 'quality':100}, similar_img={'name': 'default1.bmp', 'quality':100}):
         curr_img_path = os.path.join(self.state['path_to_unsorted_images'], curr_img['name'])
         similar_img_path = os.path.join(self.state['path_to_unsorted_images'], similar_img['name'])
         if (self.state['path_to_unsorted_images'] == 'not_specified'):
@@ -89,8 +134,10 @@ class Example(QMainWindow, Ui_MainWindow):
 
         self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
 
-
     def init_comparing_imgs(self):
+        self.dataset_load_pb.setProperty(
+            "value",
+            int(len(self.state['sorted_imgs']) * 100 / (len(self.state['sorted_imgs']) + len(self.state['unsorted_imgs']))))
         curr_img = self.state['unsorted_imgs'].pop()
         if (len(self.state['sorted_imgs']) == 0):
             self.state['sorted_imgs'].append(curr_img)
@@ -141,6 +188,7 @@ class Example(QMainWindow, Ui_MainWindow):
             self.state['path_to_unsorted_images'],
             curr_img['name'])
         """
+
         self.render_images(curr_img, closest_img)
 
     def search_lefter(self):
@@ -234,7 +282,7 @@ class Example(QMainWindow, Ui_MainWindow):
         self.gridLayout.addWidget(self.specify_img_btn, 1, 4)
         self.specify_img_btn.clicked.connect(self.init_comparing_imgs)
 
-    def initialize_images(self):
+    def init_images(self):
         try:
             image_names = os.listdir(self.state['path_to_unsorted_images'])
             for name in image_names:
@@ -245,6 +293,8 @@ class Example(QMainWindow, Ui_MainWindow):
         except FileNotFoundError:
             error_lbl = QtWidgets.QLabel('Неверно указана директория с изображениями')
             self.gridLayout.addWidget(error_lbl, 2, 1, 1, 3)
+
+
 
 
 if __name__ == '__main__':

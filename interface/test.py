@@ -1,34 +1,44 @@
 import sys
-from PyQt5.QtWidgets import (QWidget, QGridLayout, QPushButton, QApplication)
+from PyQt5.QtWidgets import (QMainWindow, QTextEdit, QAction, QFileDialog, QApplication)
+from PyQt5.QtGui import QIcon
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QPushButton
 
-
-class Example(QWidget):
+class Example(QMainWindow):
 
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
-        grid = QGridLayout()
-        self.setLayout(grid)
+        """
+        self.textEdit = QTextEdit()
+        self.setCentralWidget(self.textEdit)
+        self.statusBar()
+        """
+        inst = QPushButton("ok", self)
+        inst.setText('Выберите папку с изображениями')
+        openFile = QAction(QIcon('open.png'), 'Open', self)
+        openFile.setShortcut('Ctrl+O')
+        openFile.setStatusTip('Open new File')
+        openFile.triggered.connect(self.showDialog)
 
-        names = ['Cls', 'Bck', '', 'Close', '7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '=',
-                 '+']
-        positions = [(i, j) for i in range(5) for j in range(4)]
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(openFile)
 
-        for position, name in zip(positions, names):
-            if name == '':
-                continue
-            button = QPushButton(name)
-            grid.addWidget(button, *position)
-
-        button = QPushButton('na  ')
-        grid.addWidget(button, 1, 1)
-        button = QPushButton('  me')
-        grid.addWidget(button, 1, 1)
-        self.move(300, 150)
-        self.setWindowTitle('Calculator')
+        self.setFixedSize(QtCore.QSize(600, 400))
+        self.setWindowTitle('File dialog')
         self.show()
+
+    def showDialog(self):
+        fname = QFileDialog.getOpenFileName(self, 'Open file', '/home')
+
+        f = open(fname, 'r')
+
+        with f:
+            data = f.read()
+            self.textEdit.setText(data)
 
 
 if __name__ == '__main__':
