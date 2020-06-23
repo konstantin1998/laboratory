@@ -139,10 +139,58 @@ class Example(QMainWindow, Ui_MainWindow):
             "value",
             int(len(self.state['sorted_imgs']) * 100 / (len(self.state['sorted_imgs']) + len(self.state['unsorted_imgs'])))
         )
-
-        curr_img = {}#self.state['unsorted_imgs'].pop()
+        curr_img = {}
         if len(self.state['unsorted_imgs']) != 0:
             curr_img = self.state['unsorted_imgs'].pop()
+            if (len(self.state['sorted_imgs']) == 0):
+                self.state['sorted_imgs'].append(curr_img)
+                curr_img = self.state['unsorted_imgs'].pop()
+            self.state['curr_img'] = curr_img
+            closest_img_index = self.find_closest_img(curr_img['quality'])
+            self.state['closest_img_index'] = closest_img_index
+
+            closest_img = self.state['sorted_imgs'][closest_img_index]
+            self.state['left'] = max(0, closest_img_index - int(self.state['span'] / 2)) - closest_img_index
+            self.state['right'] = min(
+                len(self.state['sorted_imgs']) - 1,
+                closest_img_index + int(self.state['span'] / 2)) - closest_img_index
+            self.state['mid'] = 0
+
+            right_fictitious_img = {'name': 'fictitious'}
+            if self.state['closest_img_index'] + self.state['right'] + 1 <= len(self.state['sorted_imgs']) - 1:
+                right_fictitious_img['quality'] = \
+                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['right'] + 1]['quality']
+            else:
+                quality_difference = 10
+                right_fictitious_img['quality'] = \
+                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['right']][
+                        'quality'] + 2 * quality_difference
+
+            left_fictitious_img = {'name': 'fictitious'}
+            if self.state['closest_img_index'] + self.state['left'] - 1 >= 0:
+                left_fictitious_img['quality'] = \
+                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left'] - 1]['quality']
+            else:
+                quality_difference = 10
+                left_fictitious_img['quality'] = \
+                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left']][
+                        'quality'] - 2 * quality_difference
+
+            self.state['imgs_to_compare'] = [
+                left_fictitious_img,
+                *self.state['sorted_imgs'][
+                 self.state['closest_img_index'] + self.state['left']: self.state['closest_img_index'] + self.state[
+                     'right'] + 1],
+                right_fictitious_img]
+            self.state['right'] += 1
+            self.state['left'] -= 1
+            margin = abs(self.state['left'])
+            self.state['right'] += margin
+            self.state['mid'] += margin
+            self.state['left'] += margin
+            self.state['margin'] = margin
+
+            self.render_images(curr_img, closest_img)
         else:
             self.save()
             self.pushButton_2.disconnect()
@@ -152,56 +200,14 @@ class Example(QMainWindow, Ui_MainWindow):
             d.setFixedSize(QtCore.QSize(400, 150))
             btn = QtWidgets.QPushButton("ok", d)
             btn.move(170, 70)
+            btn.clicked.connect(self.close)
             btn.clicked.connect(d.close)
-            #b1.clicked.connect(self.close)
             lbl = QtWidgets.QLabel('Изображения отсортированы. Нажмите "ok" для завершения программы', d)
             lbl.move(20, 50)
             d.setWindowTitle("Изображения отсортированы")
             d.setWindowModality(QtCore.Qt.ApplicationModal)
             d.exec_()
-        if (len(self.state['sorted_imgs']) == 0):
-            self.state['sorted_imgs'].append(curr_img)
-            curr_img = self.state['unsorted_imgs'].pop()
-        self.state['curr_img'] = curr_img
-        closest_img_index = self.find_closest_img(curr_img['quality'])
-        self.state['closest_img_index'] = closest_img_index
 
-        closest_img = self.state['sorted_imgs'][closest_img_index]
-        self.state['left'] = max(0, closest_img_index - int(self.state['span'] / 2)) - closest_img_index
-        self.state['right'] = min(
-            len(self.state['sorted_imgs']) - 1,
-            closest_img_index + int(self.state['span'] / 2)) - closest_img_index
-        self.state['mid'] = 0
-
-        right_fictitious_img = {'name': 'fictitious'}
-        if self.state['closest_img_index'] + self.state['right'] + 1 <= len(self.state['sorted_imgs']) - 1:
-            right_fictitious_img['quality'] =\
-                self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['right'] + 1]['quality']
-        else:
-            quality_difference = 10
-            right_fictitious_img['quality'] =\
-                self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['right']]['quality'] + 2 * quality_difference
-
-        left_fictitious_img = {'name': 'fictitious'}
-        if self.state['closest_img_index'] + self.state['left'] - 1 >= 0:
-            left_fictitious_img['quality'] = \
-                self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left'] - 1]['quality']
-        else:
-            quality_difference = 10
-            left_fictitious_img['quality'] =\
-                self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left']]['quality'] - 2 * quality_difference
-
-        self.state['imgs_to_compare'] = [
-            left_fictitious_img,
-            *self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left']: self.state['closest_img_index'] + self.state['right'] + 1],
-            right_fictitious_img]
-        self.state['right'] += 1
-        self.state['left'] -= 1
-        self.state['right'] += abs(self.state['left'])
-        self.state['mid'] += abs(self.state['left'])
-        self.state['left'] += abs(self.state['left'])
-
-        self.render_images(curr_img, closest_img)
 
     def search_lefter(self):
         print('search lefter')
@@ -214,11 +220,10 @@ class Example(QMainWindow, Ui_MainWindow):
         self.change_similar_img(self.state['mid'], self.state['right'])
 
     def find_closest_img(self, quality):
-        def quality_func(img, param):
-            return abs(img['quality'] - param)
+        def f(number, x):
+            return abs(x['quality'] - number)
 
-        def get_quality_difference(img):
-            return quality_func(img, quality)
+        get_quality_difference = partial(f, quality)
 
         def ternarySearchMin(arr, left, right, func):
             if (left == right):
@@ -252,11 +257,15 @@ class Example(QMainWindow, Ui_MainWindow):
             left_img = self.state['imgs_to_compare'][left]
             right_img = self.state['imgs_to_compare'][right]
             if not ((left_img['quality'] <= curr_img['quality'] <= right_img['quality'])
-            or (left_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality'])
-            or (right_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality'])):
+            or (left_img['name'] == 'fictitious' and left_img['quality'] >= curr_img['quality'])
+            or (right_img['name'] == 'fictitious' and right_img['quality'] <= curr_img['quality'])):
                 curr_img['quality'] = int((left_img['quality'] + right_img['quality']) / 2)
+            print((left_img['quality'] <= curr_img['quality'] <= right_img['quality']))
+            print((left_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality']))
+            print((right_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality']))
             print('index to insert:', self.state['closest_img_index'] + right)
-            self.state['sorted_imgs'].insert(self.state['closest_img_index'] + right, curr_img)
+
+            self.state['sorted_imgs'].insert(self.state['closest_img_index'] + right - self.state['margin'], curr_img)
             self.compare_imgs()
         else:
             similar_img = self.state['imgs_to_compare'][mid]
@@ -270,6 +279,7 @@ class Example(QMainWindow, Ui_MainWindow):
         print('    mid:', self.state['mid'])
         print('    right:', self.state['right'])
         print('    sorted:', self.state['sorted_imgs'])
+        print('    closest img:', self.state['closest_img_index'])
         print('    curr:', self.state['curr_img'])
         print('}')
 
@@ -277,17 +287,6 @@ class Example(QMainWindow, Ui_MainWindow):
         state_file = open("state.py", 'w')
         state_file.write('state=' + repr(self.state))
         state_file.close()
-
-    def show_default_img(self):
-        self.curr_img = QtWidgets.QLabel(self.centralwidget)
-        self.curr_img.setPixmap(QtGui.QPixmap("IQA/instruction_image.png"))
-        self.curr_img.setScaledContents(True)
-        self.curr_img.setObjectName("label")
-        self.gridLayout.addWidget(self.curr_img, 1, 0, 1, 3)
-        self.specify_img_btn = QtWidgets.QPushButton("Загрузить", self)
-        self.gridLayout.addWidget(self.specify_img_btn, 1, 4)
-        self.specify_img_btn.clicked.connect(self.compare_imgs)
-
 
 
 
