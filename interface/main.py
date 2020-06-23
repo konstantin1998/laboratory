@@ -29,7 +29,7 @@ class Example(QMainWindow, Ui_MainWindow):
         delete_icon.addPixmap(QtGui.QPixmap("IQA/stuff/gui_img/del.jpg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.pushButton_4.setIcon(delete_icon)
         self.action_3.setStatusTip('Выбрать директорию с изображениями')
-        self.action_3.triggered.connect(self.init_imgs)
+        self.action_3.triggered.connect(self.show_loading_window)
         self.pushButton_2.setText("Отметить нижнее как лучшее")
         self.pushButton_2.clicked.connect(self.search_lefter)
         self.pushButton.setText("Отметить верхнее как лучшее")
@@ -53,40 +53,40 @@ class Example(QMainWindow, Ui_MainWindow):
         self.verticalLayout.addWidget(self.similar_img)
         """
         if self.state['path_to_unsorted_images'] == 'not_specified':
-            self.init_imgs()
+            self.show_loading_window()
         else:
-            self.init_comparing_imgs()
+            self.compare_imgs()
 
         self.show()
 
-    def init_imgs(self):
-        d = QDialog()
-        d.setFixedSize(QtCore.QSize(600, 400))
+    def show_loading_window(self):
+        imgs_load_window = QDialog()
+        imgs_load_window.setFixedSize(QtCore.QSize(600, 400))
 
-        instruction = QtWidgets.QLabel('Загрузите изображения', d)
+        instruction = QtWidgets.QLabel('Загрузите изображения', imgs_load_window)
         instruction.move(230, 50)
 
-        progress_bar = QtWidgets.QProgressBar(d)
+        progress_bar = QtWidgets.QProgressBar(imgs_load_window)
         progress_bar.setFixedSize(QtCore.QSize(300, 30))
         progress_bar.move(150, 100)
 
-        pick_ = partial(self.load_imgs, progress_bar)
+        pick_ = partial(self.initialize_imgs, progress_bar)
 
-        load_btn = QtWidgets.QPushButton('Загрузить', d)
+        load_btn = QtWidgets.QPushButton('Загрузить', imgs_load_window)
         load_btn.move(250, 70)
         load_btn.clicked.connect(pick_)
 
-        complete_btn = QtWidgets.QPushButton('Завершить', d)
+        complete_btn = QtWidgets.QPushButton('Завершить', imgs_load_window)
         complete_btn.move(250, 130)
-        complete_btn.clicked.connect(self.init_comparing_imgs)
-        complete_btn.clicked.connect(d.close)
+        complete_btn.clicked.connect(self.compare_imgs)
+        complete_btn.clicked.connect(imgs_load_window.close)
 
-        d.setWindowTitle("Загрузить изображения")
-        d.setWindowModality(QtCore.Qt.ApplicationModal)
-        d.exec_()
+        imgs_load_window.setWindowTitle("Загрузить изображения")
+        imgs_load_window.setWindowModality(QtCore.Qt.ApplicationModal)
+        imgs_load_window.exec_()
 
 
-    def load_imgs(self, progress_bar):
+    def initialize_imgs(self, progress_bar):
         dir_name = QFileDialog.getExistingDirectory()
         self.state['path_to_unsorted_images'] = dir_name
 
@@ -134,11 +134,31 @@ class Example(QMainWindow, Ui_MainWindow):
 
         self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
 
-    def init_comparing_imgs(self):
+    def compare_imgs(self):
         self.dataset_load_pb.setProperty(
             "value",
-            int(len(self.state['sorted_imgs']) * 100 / (len(self.state['sorted_imgs']) + len(self.state['unsorted_imgs']))))
-        curr_img = self.state['unsorted_imgs'].pop()
+            int(len(self.state['sorted_imgs']) * 100 / (len(self.state['sorted_imgs']) + len(self.state['unsorted_imgs'])))
+        )
+
+        curr_img = {}#self.state['unsorted_imgs'].pop()
+        if len(self.state['unsorted_imgs']) != 0:
+            curr_img = self.state['unsorted_imgs'].pop()
+        else:
+            self.save()
+            self.pushButton_2.disconnect()
+            self.pushButton.disconnect()
+
+            d = QDialog()
+            d.setFixedSize(QtCore.QSize(400, 150))
+            btn = QtWidgets.QPushButton("ok", d)
+            btn.move(170, 70)
+            btn.clicked.connect(d.close)
+            #b1.clicked.connect(self.close)
+            lbl = QtWidgets.QLabel('Изображения отсортированы. Нажмите "ok" для завершения программы', d)
+            lbl.move(20, 50)
+            d.setWindowTitle("Изображения отсортированы")
+            d.setWindowModality(QtCore.Qt.ApplicationModal)
+            d.exec_()
         if (len(self.state['sorted_imgs']) == 0):
             self.state['sorted_imgs'].append(curr_img)
             curr_img = self.state['unsorted_imgs'].pop()
@@ -180,14 +200,6 @@ class Example(QMainWindow, Ui_MainWindow):
         self.state['right'] += abs(self.state['left'])
         self.state['mid'] += abs(self.state['left'])
         self.state['left'] += abs(self.state['left'])
-        """
-        closest_img_path = os.path.join(
-            self.state['path_to_unsorted_images'],
-            closest_img['name'])
-        curr_img_path = os.path.join(
-            self.state['path_to_unsorted_images'],
-            curr_img['name'])
-        """
 
         self.render_images(curr_img, closest_img)
 
@@ -240,22 +252,15 @@ class Example(QMainWindow, Ui_MainWindow):
             left_img = self.state['imgs_to_compare'][left]
             right_img = self.state['imgs_to_compare'][right]
             if not ((left_img['quality'] <= curr_img['quality'] <= right_img['quality'])
-            or (right_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality'])
-            or (left_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality'])):
-                curr_img['quality'] = (left_img['quality'] + right_img['quality']) / 2
-            print('index to insert:', self.state['closest_img_index'] + mid + 1)
-            self.state['sorted_imgs'].insert(self.state['closest_img_index'] + mid + 1, curr_img)
-            self.init_comparing_imgs()
+            or (left_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality'])
+            or (right_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality'])):
+                curr_img['quality'] = int((left_img['quality'] + right_img['quality']) / 2)
+            print('index to insert:', self.state['closest_img_index'] + right)
+            self.state['sorted_imgs'].insert(self.state['closest_img_index'] + right, curr_img)
+            self.compare_imgs()
         else:
             similar_img = self.state['imgs_to_compare'][mid]
-            """
-            similar_img_path = os.path.join(
-                self.state['path_to_unsorted_images'],
-                similar_img['name'])
-            curr_img_path = os.path.join(
-                self.state['path_to_unsorted_images'],
-                curr_img['name'])
-            """
+
             self.render_images(curr_img, similar_img)
 
     def render(self):
@@ -267,6 +272,7 @@ class Example(QMainWindow, Ui_MainWindow):
         print('    sorted:', self.state['sorted_imgs'])
         print('    curr:', self.state['curr_img'])
         print('}')
+
     def save(self):
         state_file = open("state.py", 'w')
         state_file.write('state=' + repr(self.state))
@@ -280,19 +286,7 @@ class Example(QMainWindow, Ui_MainWindow):
         self.gridLayout.addWidget(self.curr_img, 1, 0, 1, 3)
         self.specify_img_btn = QtWidgets.QPushButton("Загрузить", self)
         self.gridLayout.addWidget(self.specify_img_btn, 1, 4)
-        self.specify_img_btn.clicked.connect(self.init_comparing_imgs)
-
-    def init_images(self):
-        try:
-            image_names = os.listdir(self.state['path_to_unsorted_images'])
-            for name in image_names:
-                item = dict()
-                item['name'] = name
-                item['quality'] = estimate_quality(os.path.join(self.state['path_to_unsorted_images'], name))
-                self.state['unsorted_imgs'].append(item)
-        except FileNotFoundError:
-            error_lbl = QtWidgets.QLabel('Неверно указана директория с изображениями')
-            self.gridLayout.addWidget(error_lbl, 2, 1, 1, 3)
+        self.specify_img_btn.clicked.connect(self.compare_imgs)
 
 
 
