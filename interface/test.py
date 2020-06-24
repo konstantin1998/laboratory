@@ -1,47 +1,36 @@
 import sys
-from PyQt5.QtWidgets import (QMainWindow, QTextEdit, QAction, QFileDialog, QApplication)
+from PyQt5.QtWidgets import (QMainWindow, QTextEdit, QAction, QFileDialog, QApplication, QMessageBox)
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QPushButton
+from PyQt5 import QtGui
 
-class Example(QMainWindow):
-
+class MyMessageBox(QMessageBox):
     def __init__(self):
-        super().__init__()
-        self.initUI()
+        QMessageBox.__init__(self)
+        self.setSizeGripEnabled(True)
 
-    def initUI(self):
-        """
-        self.textEdit = QTextEdit()
-        self.setCentralWidget(self.textEdit)
-        self.statusBar()
-        """
-        inst = QPushButton("ok", self)
-        inst.setText('Выберите папку с изображениями')
-        openFile = QAction(QIcon('open.png'), 'Open', self)
-        openFile.setShortcut('Ctrl+O')
-        openFile.setStatusTip('Open new File')
-        openFile.triggered.connect(self.showDialog)
+    def event(self, e):
+        result = QMessageBox.event(self, e)
 
-        menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(openFile)
+        self.setMinimumHeight(0)
+        self.setMaximumHeight(16777215)
+        self.setMinimumWidth(0)
+        self.setMaximumWidth(16777215)
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 
-        self.setFixedSize(QtCore.QSize(600, 400))
-        self.setWindowTitle('File dialog')
-        self.show()
+        textEdit = self.findChild(QtGui.QTextEdit)
+        if textEdit != None :
+            textEdit.setMinimumHeight(0)
+            textEdit.setMaximumHeight(16777215)
+            textEdit.setMinimumWidth(0)
+            textEdit.setMaximumWidth(16777215)
+            textEdit.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 
-    def showDialog(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file', '/home')
-
-        f = open(fname, 'r')
-
-        with f:
-            data = f.read()
-            self.textEdit.setText(data)
-
+        return result
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = Example()
-    sys.exit(app.exec_())
+    mb = MyMessageBox()
+    mb.setText("Results written to '%s'" % 'some_file_name')
+    mb.setDetailedText('some text')
+    mb.exec_()

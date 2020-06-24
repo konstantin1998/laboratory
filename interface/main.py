@@ -4,7 +4,7 @@
 import sys
 import os
 from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QFileDialog, QDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QFileDialog, QDialog, QPlainTextEdit
 from interface.IQA.generated_gui import Ui_MainWindow
 from interface.IQA.quality_estimator.estimator import estimate_quality
 from interface.state import state
@@ -35,6 +35,8 @@ class Example(QMainWindow, Ui_MainWindow):
         self.pushButton.setText("Отметить верхнее как лучшее")
         self.pushButton.clicked.connect(self.search_righter)
         self.pushButton_4.clicked.connect(self.save)
+        #self.save_btn = QtWidgets.QPushButton('Сохранить', self.menubar)
+        #self.menu_4.clicked.connect(self.show_instruction)
 
         self.curr_metrix_lbl = QtWidgets.QLabel()
         self.similar_metrix_lbl = QtWidgets.QLabel()
@@ -42,16 +44,7 @@ class Example(QMainWindow, Ui_MainWindow):
         self.similar_img_lbl = QtWidgets.QLabel()
         self.img_box = QVBoxLayout()
         self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
-        """
-        self.centralwidget = QtWidgets.QWidget(self)
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
-        self.curr_img = QtWidgets.QLabel(self.centralwidget)
-        self.similar_img = QtWidgets.QLabel(self.centralwidget)
-        self.verticalLayout.addWidget(self.curr_img_lbl)
-        self.verticalLayout.addWidget(self.curr_img)
-        self.verticalLayout.addWidget(self.similar_img_lbl)
-        self.verticalLayout.addWidget(self.similar_img)
-        """
+
         if self.state['path_to_unsorted_images'] == 'not_specified':
             self.show_loading_window()
         else:
@@ -63,24 +56,34 @@ class Example(QMainWindow, Ui_MainWindow):
         imgs_load_window = QDialog()
         imgs_load_window.setFixedSize(QtCore.QSize(600, 400))
 
-        instruction = QtWidgets.QLabel('Загрузите изображения', imgs_load_window)
-        instruction.move(230, 50)
-
         progress_bar = QtWidgets.QProgressBar(imgs_load_window)
         progress_bar.setFixedSize(QtCore.QSize(300, 30))
         progress_bar.move(150, 100)
 
-        pick_ = partial(self.initialize_imgs, progress_bar)
+        load_imgs = partial(self.initialize_imgs, progress_bar)
 
-        load_btn = QtWidgets.QPushButton('Загрузить', imgs_load_window)
-        load_btn.move(250, 70)
-        load_btn.clicked.connect(pick_)
+        load_btn = QtWidgets.QPushButton('Загрузить')
+        load_btn.clicked.connect(load_imgs)
 
-        complete_btn = QtWidgets.QPushButton('Завершить', imgs_load_window)
-        complete_btn.move(250, 130)
-        complete_btn.clicked.connect(self.compare_imgs)
-        complete_btn.clicked.connect(imgs_load_window.close)
+        continue_btn = QtWidgets.QPushButton('Продолжить')
+        continue_btn.clicked.connect(self.compare_imgs)
+        continue_btn.clicked.connect(imgs_load_window.close)
 
+        instruction_btn = QtWidgets.QPushButton('Инструкция')
+        instruction_btn.clicked.connect(self.show_instruction)
+
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addStretch(1)
+        hbox.addWidget(load_btn)
+        hbox.addWidget(continue_btn)
+        hbox.addWidget(instruction_btn)
+
+        vbox = QVBoxLayout()
+        vbox.addStretch(1)
+        vbox.addLayout(hbox)
+        vbox.setDirection(3)
+
+        imgs_load_window.setLayout(vbox)
         imgs_load_window.setWindowTitle("Загрузить изображения")
         imgs_load_window.setWindowModality(QtCore.Qt.ApplicationModal)
         imgs_load_window.exec_()
@@ -103,6 +106,26 @@ class Example(QMainWindow, Ui_MainWindow):
         state_file.write('state=' + repr(self.state))
         state_file.close()
 
+    def upload_results(self):
+        dir_name = QFileDialog.getExistingDirectory()
+        results_path = os.path.join(dir_name, 'results.py')
+        results_file = open(results_path, 'w')
+        results_file.write(self.state['sorted_imgs'])
+        results_file.close()
+
+    def show_uploading_window(self):
+        uploading_winow = QDialog()
+        uploading_winow.setFixedSize(QtCore.QSize(400, 150))
+
+        lbl = QtWidgets.QPushButton('Выберите директорию для загрузки результатов', uploading_winow)
+        lbl.move(160, 50)
+
+        pick_btn = QtWidgets.QPushButton('Выбрать директорию', uploading_winow)
+        pick_btn.move(160, 70)
+        pick_btn.clicked.connect(self.upload_results)
+
+        uploading_winow.setWindowTitle("Выгрузить изображения")
+        uploading_winow.exec_()
 
     def render_images(self, curr_img={'name': 'default2.bmp', 'quality':100}, similar_img={'name': 'default1.bmp', 'quality':100}):
         curr_img_path = os.path.join(self.state['path_to_unsorted_images'], curr_img['name'])
@@ -139,7 +162,6 @@ class Example(QMainWindow, Ui_MainWindow):
             "value",
             int(len(self.state['sorted_imgs']) * 100 / (len(self.state['sorted_imgs']) + len(self.state['unsorted_imgs'])))
         )
-        curr_img = {}
         if len(self.state['unsorted_imgs']) != 0:
             curr_img = self.state['unsorted_imgs'].pop()
             if (len(self.state['sorted_imgs']) == 0):
@@ -163,8 +185,7 @@ class Example(QMainWindow, Ui_MainWindow):
             else:
                 quality_difference = 10
                 right_fictitious_img['quality'] = \
-                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['right']][
-                        'quality'] + 2 * quality_difference
+                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['right']]['quality'] + 2 * quality_difference
 
             left_fictitious_img = {'name': 'fictitious'}
             if self.state['closest_img_index'] + self.state['left'] - 1 >= 0:
@@ -173,14 +194,11 @@ class Example(QMainWindow, Ui_MainWindow):
             else:
                 quality_difference = 10
                 left_fictitious_img['quality'] = \
-                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left']][
-                        'quality'] - 2 * quality_difference
+                    self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left']]['quality'] - 2 * quality_difference
 
             self.state['imgs_to_compare'] = [
                 left_fictitious_img,
-                *self.state['sorted_imgs'][
-                 self.state['closest_img_index'] + self.state['left']: self.state['closest_img_index'] + self.state[
-                     'right'] + 1],
+                *self.state['sorted_imgs'][self.state['closest_img_index'] + self.state['left']: self.state['closest_img_index'] + self.state['right'] + 1],
                 right_fictitious_img]
             self.state['right'] += 1
             self.state['left'] -= 1
@@ -195,19 +213,40 @@ class Example(QMainWindow, Ui_MainWindow):
             self.save()
             self.pushButton_2.disconnect()
             self.pushButton.disconnect()
+            self.show_closing_window()
 
-            d = QDialog()
-            d.setFixedSize(QtCore.QSize(400, 150))
-            btn = QtWidgets.QPushButton("ok", d)
-            btn.move(170, 70)
-            btn.clicked.connect(self.close)
-            btn.clicked.connect(d.close)
-            lbl = QtWidgets.QLabel('Изображения отсортированы. Нажмите "ok" для завершения программы', d)
-            lbl.move(20, 50)
-            d.setWindowTitle("Изображения отсортированы")
-            d.setWindowModality(QtCore.Qt.ApplicationModal)
-            d.exec_()
+    def show_instruction(self):
+        instruction = QDialog()
+        instruction.text_area = QPlainTextEdit(instruction)
+        instruction.text_area.insertPlainText("You can write text here. You can write text here. You can write text here. You can write text here.You can write text here.You can write text here.\n")
+        instruction.text_area.move(10,10)
+        instruction.text_area.resize(400,200)
+        instruction.text_area.setDisabled(True)
+        instruction.setWindowTitle('Инструкция')
 
+        instruction.exec_()
+
+    def show_closing_window(self):
+        closing_window = QDialog()
+        closing_window.setFixedSize(QtCore.QSize(400, 150))
+
+        cancel_btn = QtWidgets.QPushButton("ok", closing_window)
+        cancel_btn.move(170, 70)
+        cancel_btn.clicked.connect(self.close)
+        cancel_btn.clicked.connect(closing_window.close)
+
+        lbl = QtWidgets.QLabel('Изображения отсортированы. Нажмите "ok" для завершения программы', closing_window)
+        lbl.move(20, 50)
+
+        continue_btn = QtWidgets.QPushButton('Сортировать ещё', closing_window)
+        continue_btn.clicked.connect(self.close)
+        continue_btn.clicked.connect(self.show_loading_window)
+        continue_btn.clicked.connect(closing_window.close)
+        continue_btn.move(150, 100)
+
+        closing_window.setWindowTitle("Изображения отсортированы")
+        closing_window.setWindowModality(QtCore.Qt.ApplicationModal)
+        closing_window.exec_()
 
     def search_lefter(self):
         print('search lefter')
@@ -260,6 +299,7 @@ class Example(QMainWindow, Ui_MainWindow):
             or (left_img['name'] == 'fictitious' and left_img['quality'] >= curr_img['quality'])
             or (right_img['name'] == 'fictitious' and right_img['quality'] <= curr_img['quality'])):
                 curr_img['quality'] = int((left_img['quality'] + right_img['quality']) / 2)
+
             print((left_img['quality'] <= curr_img['quality'] <= right_img['quality']))
             print((left_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality']))
             print((right_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality']))
@@ -269,7 +309,6 @@ class Example(QMainWindow, Ui_MainWindow):
             self.compare_imgs()
         else:
             similar_img = self.state['imgs_to_compare'][mid]
-
             self.render_images(curr_img, similar_img)
 
     def render(self):
