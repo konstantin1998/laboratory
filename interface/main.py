@@ -12,7 +12,7 @@ from functools import partial
 
 class Example(QMainWindow, Ui_MainWindow):
 
-    def __init__(self):
+    def __init__(self, state):
         super(Example, self).__init__()
         self.setupUi(self)
         self.state = state
@@ -35,8 +35,16 @@ class Example(QMainWindow, Ui_MainWindow):
         self.pushButton.setText("Отметить верхнее как лучшее")
         self.pushButton.clicked.connect(self.search_righter)
         self.pushButton_4.clicked.connect(self.save)
-        #self.save_btn = QtWidgets.QPushButton('Сохранить', self.menubar)
-        #self.menu_4.clicked.connect(self.show_instruction)
+        self.action_5.setText("Как это работает")
+        self.action_5.triggered.connect(self.show_instruction)
+
+        self.save_btn = QtWidgets.QMenu(self.menubar)
+        self.save_act = QtWidgets.QAction(self)
+        self.save_btn.setTitle('Сохранить')
+        self.save_btn.addAction(self.save_act)
+        self.menubar.addAction(self.save_btn.menuAction())
+        self.save_act.setText('Сохранить')
+        self.save_act.triggered.connect(self.save)
 
         self.curr_metrix_lbl = QtWidgets.QLabel()
         self.similar_metrix_lbl = QtWidgets.QLabel()
@@ -44,6 +52,11 @@ class Example(QMainWindow, Ui_MainWindow):
         self.similar_img_lbl = QtWidgets.QLabel()
         self.img_box = QVBoxLayout()
         self.gridLayout.addLayout(self.img_box, 1, 0, 2, 3)
+
+        self.upload_act = QtWidgets.QAction(self)
+        self.upload_act.setText('Выгрузить результаты')
+        self.menu_2.addAction(self.upload_act)
+        self.upload_act.triggered.connect(self.upload_results)
 
         if self.state['path_to_unsorted_images'] == 'not_specified':
             self.show_loading_window()
@@ -110,7 +123,7 @@ class Example(QMainWindow, Ui_MainWindow):
         dir_name = QFileDialog.getExistingDirectory()
         results_path = os.path.join(dir_name, 'results.py')
         results_file = open(results_path, 'w')
-        results_file.write(self.state['sorted_imgs'])
+        results_file.write(repr(self.state['sorted_imgs']))
         results_file.close()
 
     def show_uploading_window(self):
@@ -218,7 +231,17 @@ class Example(QMainWindow, Ui_MainWindow):
     def show_instruction(self):
         instruction = QDialog()
         instruction.text_area = QPlainTextEdit(instruction)
-        instruction.text_area.insertPlainText("You can write text here. You can write text here. You can write text here. You can write text here.You can write text here.You can write text here.\n")
+        instruction.text_area.insertPlainText('Нажмите "Загрузить" для того, чтобы выбрать директорию с изображениями.'
+                                              ' Загрузка может занять продолжительное время. Дождитесь окончания загрузки'
+                                              ' и нажмите "Продолжить". После этого выпопадете в главное окно программы. '
+                                              'Вверху располагается текущее изображение под ним - похожее по качеству '
+                                              'изображение. Справа от изображений написаны метрики качества, посчитанные '
+                                              'автоматически. Вам нужно выбрать лучшее, исходя из субъективных представлений.'
+                                              ' Когда все изображения обработаны автоматически всплывет соответствующее окно.'
+                                              ' При нажатии на кнопку "ок" результаты сортировки изображений загрузятся в файл,'
+                                              ' который надо будет выбрать и программа закроется. Если нужно еще отсортировать'
+                                              ' изображения, надо нажать на кнопку "Сортировать еще", чтобы загрузить'
+                                              ' изображения заново и начать сортировать. \n')
         instruction.text_area.move(10,10)
         instruction.text_area.resize(400,200)
         instruction.text_area.setDisabled(True)
@@ -239,11 +262,20 @@ class Example(QMainWindow, Ui_MainWindow):
         lbl.move(20, 50)
 
         continue_btn = QtWidgets.QPushButton('Сортировать ещё', closing_window)
+        continue_btn.clicked.connect(self.state_to_default)
         continue_btn.clicked.connect(self.close)
         continue_btn.clicked.connect(self.show_loading_window)
         continue_btn.clicked.connect(closing_window.close)
         continue_btn.move(150, 100)
+        """
+        upload_btn = QtWidgets.QPushButton('Выгрузить результаты', closing_window)
 
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addStretch(1)
+        hbox.addWidget(cancel_btn)
+        hbox.addWidget(continue_btn)
+        hbox.addWidget(instruction_btn)
+        """
         closing_window.setWindowTitle("Изображения отсортированы")
         closing_window.setWindowModality(QtCore.Qt.ApplicationModal)
         closing_window.exec_()
@@ -323,13 +355,20 @@ class Example(QMainWindow, Ui_MainWindow):
         print('}')
 
     def save(self):
+        self.state['unsorted_imgs'].append(self.state['curr_img'])
         state_file = open("state.py", 'w')
         state_file.write('state=' + repr(self.state))
         state_file.close()
+
+    def state_to_default(self):
+        self.state['path_to_unsorted_images'] = 'not_specified'
+        self.state['output_dir'] = 'not_specified'
+        self.state['unsorted_imgs'] = []
+        self.state['sorted_imgs'] = []
 
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = Example()
+    ex = Example(state)
     sys.exit(app.exec_())
