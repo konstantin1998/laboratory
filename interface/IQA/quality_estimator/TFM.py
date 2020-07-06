@@ -1,31 +1,31 @@
 import numpy as np
-
-
-def sobel_grad(arr):
-    d_r = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
-    d_c = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-    arr = np.array(arr)
-    s_r = (arr * d_r).sum()
-    s_c = (arr * d_c).sum()
-    return (s_r ** 2 + s_c ** 2) ** 0.5
+import cupy as cp
+from cupyx.scipy.ndimage import convolve as conv
 
 
 def tfm(arr, p=0.6):
     arr = np.array(arr)
-    max_elem = np.absolute(arr).max()
-    k = np.zeros(arr.shape)
-    for i in range(k.shape[0]):
-        for j in range(k.shape[1]):
-            if (abs(arr[i, j]) >= p * max_elem):
-                k[i, j] = 1
-            else:
-                k[i, j] = 0
+    p_cpu = np.array([p])
 
-    result = 0
-    height, width = arr.shape
-    for i in range(1, height - 1):
-        for j in range(1, width - 1):
-            window = np.array([arr[i - 1][j - 1: j + 2], arr[i][j - 1: j + 2], arr[i + 1][j - 1: j + 2]])
-            result += k[i, j] * sobel_grad(window) ** 2
+    with cp.cuda.Device(0):
+        img = cp.asarray(arr)
+        p_gpu = cp.asarray(p_cpu)
+        p = p_gpu[0]
+        max_elem = img.max()
 
-    return result
+        k = (img >= p * max_elem).astype(int)
+        d_r = cp.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
+        d_c = cp.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+        s_r = conv(img, d_r) / 1000
+        s_c = conv(img, d_c) / 1000
+        squared_s_r = cp.square(s_r)
+        squared_s_c = cp.square(s_c)
+        sobel_grad_arr = cp.add(squared_s_r, squared_s_c)
+
+        tfm = cp.multiply(k, sobel_grad_arr).sum()
+        tfm_arr_gpu = cp.array([tfm])
+
+    tfm_arr_cpu = cp.asnumpy(tfm_arr_gpu)
+    return tfm_arr_cpu[0]
+
+

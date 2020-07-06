@@ -110,7 +110,7 @@ class Example(QMainWindow, Ui_MainWindow):
         for i in range(len(image_names)):
             item = dict()
             item['name'] = image_names[i]
-            self.state['loading'] = int((i + 1) / len(image_names)) * 100
+            self.state['loading'] = int((i + 1) / len(image_names) * 100)
             progress_bar.setProperty("value", self.state['loading'])
             item['quality'] = estimate_quality(os.path.join(self.state['path_to_unsorted_images'], image_names[i]))
             self.state['unsorted_imgs'].append(item)
@@ -254,40 +254,34 @@ class Example(QMainWindow, Ui_MainWindow):
         closing_window.setFixedSize(QtCore.QSize(400, 150))
 
         cancel_btn = QtWidgets.QPushButton("ok", closing_window)
-        cancel_btn.move(170, 70)
+        cancel_btn.move(170, 60)
+        cancel_btn.clicked.connect(self.save)
         cancel_btn.clicked.connect(self.close)
         cancel_btn.clicked.connect(closing_window.close)
 
         lbl = QtWidgets.QLabel('Изображения отсортированы. Нажмите "ok" для завершения программы', closing_window)
-        lbl.move(20, 50)
+        lbl.move(20, 30)
 
         continue_btn = QtWidgets.QPushButton('Сортировать ещё', closing_window)
         continue_btn.clicked.connect(self.state_to_default)
         continue_btn.clicked.connect(self.close)
         continue_btn.clicked.connect(self.show_loading_window)
         continue_btn.clicked.connect(closing_window.close)
-        continue_btn.move(150, 100)
-        """
-        upload_btn = QtWidgets.QPushButton('Выгрузить результаты', closing_window)
+        continue_btn.move(165, 85)
 
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addStretch(1)
-        hbox.addWidget(cancel_btn)
-        hbox.addWidget(continue_btn)
-        hbox.addWidget(instruction_btn)
-        """
+        upload_btn = QtWidgets.QPushButton('Выгрузить результаты', closing_window)
+        upload_btn.clicked.connect(self.upload_results)
+        upload_btn.clicked.connect(self.state_to_default)
+        upload_btn.move(150, 110)
+
         closing_window.setWindowTitle("Изображения отсортированы")
         closing_window.setWindowModality(QtCore.Qt.ApplicationModal)
         closing_window.exec_()
 
     def search_lefter(self):
-        print('search lefter')
-        self.render()
         self.change_similar_img(self.state['left'], self.state['mid'])
 
     def search_righter(self):
-        print('search righter')
-        self.render()
         self.change_similar_img(self.state['mid'], self.state['right'])
 
     def find_closest_img(self, quality):
@@ -331,12 +325,12 @@ class Example(QMainWindow, Ui_MainWindow):
             or (left_img['name'] == 'fictitious' and left_img['quality'] >= curr_img['quality'])
             or (right_img['name'] == 'fictitious' and right_img['quality'] <= curr_img['quality'])):
                 curr_img['quality'] = int((left_img['quality'] + right_img['quality']) / 2)
-
+            """
             print((left_img['quality'] <= curr_img['quality'] <= right_img['quality']))
             print((left_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality']))
             print((right_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality']))
             print('index to insert:', self.state['closest_img_index'] + right)
-
+            """
             self.state['sorted_imgs'].insert(self.state['closest_img_index'] + right - self.state['margin'], curr_img)
             self.compare_imgs()
         else:
@@ -355,7 +349,7 @@ class Example(QMainWindow, Ui_MainWindow):
         print('}')
 
     def save(self):
-        self.state['unsorted_imgs'].append(self.state['curr_img'])
+        #self.state['unsorted_imgs'].append(self.state['curr_img'])
         state_file = open("state.py", 'w')
         state_file.write('state=' + repr(self.state))
         state_file.close()

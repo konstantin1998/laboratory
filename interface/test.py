@@ -1,36 +1,19 @@
-import sys
-from PyQt5.QtWidgets import (QMainWindow, QTextEdit, QAction, QFileDialog, QApplication, QMessageBox)
-from PyQt5.QtGui import QIcon
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QPushButton
-from PyQt5 import QtGui
 
-class MyMessageBox(QMessageBox):
-    def __init__(self):
-        QMessageBox.__init__(self)
-        self.setSizeGripEnabled(True)
+from interface.IQA.quality_estimator.estimator import estimate_quality
+import os.path
+import time
 
-    def event(self, e):
-        result = QMessageBox.event(self, e)
-
-        self.setMinimumHeight(0)
-        self.setMaximumHeight(16777215)
-        self.setMinimumWidth(0)
-        self.setMaximumWidth(16777215)
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-
-        textEdit = self.findChild(QtGui.QTextEdit)
-        if textEdit != None :
-            textEdit.setMinimumHeight(0)
-            textEdit.setMaximumHeight(16777215)
-            textEdit.setMinimumWidth(0)
-            textEdit.setMaximumWidth(16777215)
-            textEdit.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-
-        return result
-
-if __name__ == '__main__':
-    mb = MyMessageBox()
-    mb.setText("Results written to '%s'" % 'some_file_name')
-    mb.setDetailedText('some text')
-    mb.exec_()
+image_names = ['St112L_4_V_46_S_629671.2562.bmp',
+               'St112L_4_V_52_S_621672.4916.bmp',
+               'St112L_4_V_58_S_616534.0086.bmp',
+               'St112L_4_V_62_S_618506.5305.bmp',
+               'St112L_4_V_64_S_622187.4392.bmp']
+img_dir = 'D:/Word/imgs'
+qualities = []
+start_time = time.time()
+for name in image_names:
+    path_to_img = os.path.join(img_dir, name)
+    quality = estimate_quality(path_to_img)
+    qualities.append(quality)
+print("--- %s seconds ---" % (time.time() - start_time))
+print(qualities)
