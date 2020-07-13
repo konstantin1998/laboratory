@@ -9,6 +9,10 @@ from interface.IQA.generated_gui import Ui_MainWindow
 from interface.IQA.quality_estimator.estimator import estimate_quality
 from interface.state import state
 from functools import partial
+from PyQt5.QtCore import QRect
+from interface.magnify import count_relative_pos, extract_fragment
+
+
 
 class Example(QMainWindow, Ui_MainWindow):
 
@@ -57,6 +61,8 @@ class Example(QMainWindow, Ui_MainWindow):
         self.upload_act.setText('Выгрузить результаты')
         self.menu_2.addAction(self.upload_act)
         self.upload_act.triggered.connect(self.upload_results)
+
+        self.pushButton_6.clicked.connect(self.zoom)
 
         if self.state['path_to_unsorted_images'] == 'not_specified':
             self.show_loading_window()
@@ -143,9 +149,10 @@ class Example(QMainWindow, Ui_MainWindow):
     def render_images(self, curr_img={'name': 'default2.bmp', 'quality':100}, similar_img={'name': 'default1.bmp', 'quality':100}):
         curr_img_path = os.path.join(self.state['path_to_unsorted_images'], curr_img['name'])
         similar_img_path = os.path.join(self.state['path_to_unsorted_images'], similar_img['name'])
+        self.state['similar_img'] = similar_img
         if (self.state['path_to_unsorted_images'] == 'not_specified'):
-            curr_img_path = 'IQA/default2.bmp'
-            similar_img_path = 'IQA/default1.bmp'
+            curr_img_path = 'IQA/images/default2.bmp'
+            similar_img_path = 'IQA/images/default1.bmp'
         self.gridLayout.removeItem(self.img_box)
         self.curr_img = QtWidgets.QLabel(self.centralwidget)
         self.curr_img.setPixmap(QtGui.QPixmap(curr_img_path))
@@ -284,6 +291,9 @@ class Example(QMainWindow, Ui_MainWindow):
     def search_righter(self):
         self.change_similar_img(self.state['mid'], self.state['right'])
 
+    def zoom(self):
+        self.state['zoommed'] = True
+
     def find_closest_img(self, quality):
         def f(number, x):
             return abs(x['quality'] - number)
@@ -325,12 +335,6 @@ class Example(QMainWindow, Ui_MainWindow):
             or (left_img['name'] == 'fictitious' and left_img['quality'] >= curr_img['quality'])
             or (right_img['name'] == 'fictitious' and right_img['quality'] <= curr_img['quality'])):
                 curr_img['quality'] = int((left_img['quality'] + right_img['quality']) / 2)
-            """
-            print((left_img['quality'] <= curr_img['quality'] <= right_img['quality']))
-            print((left_img['name'] == 'fictitious' and left_img['quality'] <= curr_img['quality']))
-            print((right_img['name'] == 'fictitious' and right_img['quality'] >= curr_img['quality']))
-            print('index to insert:', self.state['closest_img_index'] + right)
-            """
             self.state['sorted_imgs'].insert(self.state['closest_img_index'] + right - self.state['margin'], curr_img)
             self.compare_imgs()
         else:
@@ -360,6 +364,56 @@ class Example(QMainWindow, Ui_MainWindow):
         self.state['unsorted_imgs'] = []
         self.state['sorted_imgs'] = []
 
+    def magnify(self):
+        magnifier_window = QDialog()
+
+        curr_cropped_path = self.state['curr_img_cropped']
+        curr_img_cropped = QtWidgets.QLabel(magnifier_window)
+        curr_img_cropped.setPixmap(QtGui.QPixmap(curr_cropped_path))
+        curr_img_lbl = QtWidgets.QLabel(magnifier_window)
+        curr_img_lbl.setText('Текущее')
+
+        similar_cropped_path = self.state['similar_img_cropped']
+        similar_img_cropped = QtWidgets.QLabel(magnifier_window)
+        similar_img_cropped.setPixmap(QtGui.QPixmap(similar_cropped_path))
+        similar_img_lbl = QtWidgets.QLabel(magnifier_window)
+        similar_img_lbl.setText('Похожее')
+
+        grid = QtWidgets.QGridLayout()
+        magnifier_window.setLayout(grid)
+
+        grid.addWidget(curr_img_lbl, 1, 1)
+        grid.addWidget(curr_img_cropped, 1, 2)
+        grid.addWidget(similar_img_lbl, 2, 1)
+        grid.addWidget(similar_img_cropped, 2, 2)
+
+        magnifier_window.setGeometry(300, 300, 300, 300)
+        magnifier_window.setFixedSize(QtCore.QSize(300, 300))
+        magnifier_window.setWindowTitle('Images')
+        magnifier_window.setWindowModality(QtCore.Qt.ApplicationModal)
+        magnifier_window.exec_()
+
+    def mousePressEvent(self, event):
+
+        if self.state['zoommed']:
+            self.state['zoommed'] = False
+            curr_img_top_left = self.curr_img.pos() + self.centralwidget.pos()
+            similar_img_top_left = self.similar_img.pos() + self.centralwidget.pos()
+            curr_img_rect = QRect(curr_img_top_left, self.curr_img.rect().size())
+            similar_img_rect = QRect(similar_img_top_left, self.similar_img.rect().size())
+
+            if (curr_img_rect.contains(event.pos()) or  similar_img_rect.contains(event.pos())):
+                relative_pos = (0, 0)
+                curr_img_path = os.path.join(self.state['path_to_unsorted_images'], self.state['curr_img']['name'])
+                similar_img_path = os.path.join(self.state['path_to_unsorted_images'], self.state['similar_img']['name'])
+                if curr_img_rect.contains(event.pos()):
+                    relative_pos = count_relative_pos(curr_img_rect, event.pos())
+                if similar_img_rect.contains(event.pos()):
+                    relative_pos = count_relative_pos(similar_img_rect, event.pos())
+
+                extract_fragment(curr_img_path, self.state['curr_img_cropped'], relative_pos)
+                extract_fragment(similar_img_path, self.state['similar_img_cropped'], relative_pos)
+                self.magnify()
 
 
 if __name__ == '__main__':

@@ -75,7 +75,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
         self.label.setSizePolicy(sizePolicy)
         self.label.setText("")
-        self.label.setPixmap(QtGui.QPixmap("default2.bmp"))
+        self.label.setPixmap(QtGui.QPixmap("images/default2.bmp"))
         self.label.setScaledContents(True)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 1, 0, 1, 3)
