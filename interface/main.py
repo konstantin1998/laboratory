@@ -64,6 +64,8 @@ class Example(QMainWindow, Ui_MainWindow):
 
         self.pushButton_6.clicked.connect(self.zoom)
 
+        self.instruction = None
+
         if self.state['path_to_unsorted_images'] == 'not_specified':
             self.show_loading_window()
         else:
@@ -107,18 +109,16 @@ class Example(QMainWindow, Ui_MainWindow):
         imgs_load_window.setWindowModality(QtCore.Qt.ApplicationModal)
         imgs_load_window.exec_()
 
-
     def initialize_imgs(self, progress_bar):
         dir_name = QFileDialog.getExistingDirectory()
         self.state['path_to_unsorted_images'] = dir_name
-
         image_names = os.listdir(self.state['path_to_unsorted_images'])
         for i in range(len(image_names)):
             item = dict()
             item['name'] = image_names[i]
-            self.state['loading'] = int((i + 1) / len(image_names) * 100)
-            progress_bar.setProperty("value", self.state['loading'])
+            print(os.path.join(self.state['path_to_unsorted_images'], image_names[i]))
             item['quality'] = estimate_quality(os.path.join(self.state['path_to_unsorted_images'], image_names[i]))
+            progress_bar.setProperty("value", int((i + 1) / len(image_names) * 100))
             self.state['unsorted_imgs'].append(item)
 
         state_file = open("state.py", 'w')
@@ -146,7 +146,7 @@ class Example(QMainWindow, Ui_MainWindow):
         uploading_winow.setWindowTitle("Выгрузить изображения")
         uploading_winow.exec_()
 
-    def render_images(self, curr_img={'name': 'default2.bmp', 'quality':100}, similar_img={'name': 'default1.bmp', 'quality':100}):
+    def render_images(self, curr_img={'name': 'default2.bmp', 'quality':1000}, similar_img={'name': 'default1.bmp', 'quality':1000}):
         curr_img_path = os.path.join(self.state['path_to_unsorted_images'], curr_img['name'])
         similar_img_path = os.path.join(self.state['path_to_unsorted_images'], similar_img['name'])
         self.state['similar_img'] = similar_img
@@ -154,8 +154,13 @@ class Example(QMainWindow, Ui_MainWindow):
             curr_img_path = 'IQA/images/default2.bmp'
             similar_img_path = 'IQA/images/default1.bmp'
         self.gridLayout.removeItem(self.img_box)
+
         self.curr_img = QtWidgets.QLabel(self.centralwidget)
-        self.curr_img.setPixmap(QtGui.QPixmap(curr_img_path))
+        curr_pix_map = QtGui.QPixmap(curr_img_path)
+        w, h = curr_pix_map.size().width(), curr_pix_map.size().height()
+        if w < h:
+            curr_pix_map = curr_pix_map.transformed(QtGui.QTransform().rotate(90))
+        self.curr_img.setPixmap(QtGui.QPixmap(curr_pix_map))
         self.curr_img.setScaledContents(True)
         self.curr_img.setObjectName("label")
         self.img_box = QVBoxLayout()
@@ -166,7 +171,11 @@ class Example(QMainWindow, Ui_MainWindow):
         self.gridLayout.addWidget(self.curr_metrix_lbl, 1, 4)
 
         self.similar_img = QtWidgets.QLabel(self.centralwidget)
-        self.similar_img.setPixmap(QtGui.QPixmap(similar_img_path))
+        similar_pix_map = QtGui.QPixmap(similar_img_path)
+        w, h = similar_pix_map.size().width(), similar_pix_map.size().height()
+        if w < h:
+            similar_pix_map = similar_pix_map.transformed(QtGui.QTransform().rotate(90))
+        self.similar_img.setPixmap(similar_pix_map)
         self.similar_img.setScaledContents(True)
         self.similar_img.setObjectName("label")
         self.similar_img_lbl.setText('Похожее изображение: ' + similar_img['name'])
@@ -238,19 +247,15 @@ class Example(QMainWindow, Ui_MainWindow):
     def show_instruction(self):
         instruction = QDialog()
         instruction.text_area = QPlainTextEdit(instruction)
-        instruction.text_area.insertPlainText('Нажмите "Загрузить" для того, чтобы выбрать директорию с изображениями.'
-                                              ' Загрузка может занять продолжительное время. Дождитесь окончания загрузки'
-                                              ' и нажмите "Продолжить". После этого выпопадете в главное окно программы. '
-                                              'Вверху располагается текущее изображение под ним - похожее по качеству '
-                                              'изображение. Справа от изображений написаны метрики качества, посчитанные '
-                                              'автоматически. Вам нужно выбрать лучшее, исходя из субъективных представлений.'
-                                              ' Когда все изображения обработаны автоматически всплывет соответствующее окно.'
-                                              ' При нажатии на кнопку "ок" результаты сортировки изображений загрузятся в файл,'
-                                              ' который надо будет выбрать и программа закроется. Если нужно еще отсортировать'
-                                              ' изображения, надо нажать на кнопку "Сортировать еще", чтобы загрузить'
-                                              ' изображения заново и начать сортировать. \n')
-        instruction.text_area.move(10,10)
-        instruction.text_area.resize(400,200)
+        if self.instruction == None:
+            f = open('instruction.txt', 'r', encoding='UTF-8')
+            instruction_text = f.read()
+            f.close()
+            self.instruction = instruction_text
+
+        instruction.text_area.insertPlainText(self.instruction)
+        instruction.text_area.move(10, 10)
+        instruction.text_area.resize(400, 200)
         instruction.text_area.setDisabled(True)
         instruction.setWindowTitle('Инструкция')
 
@@ -332,25 +337,14 @@ class Example(QMainWindow, Ui_MainWindow):
             left_img = self.state['imgs_to_compare'][left]
             right_img = self.state['imgs_to_compare'][right]
             if not ((left_img['quality'] <= curr_img['quality'] <= right_img['quality'])
-            or (left_img['name'] == 'fictitious' and left_img['quality'] >= curr_img['quality'])
-            or (right_img['name'] == 'fictitious' and right_img['quality'] <= curr_img['quality'])):
+                    or (left_img['name'] == 'fictitious' and left_img['quality'] >= curr_img['quality'])
+                    or (right_img['name'] == 'fictitious' and right_img['quality'] <= curr_img['quality'])):
                 curr_img['quality'] = int((left_img['quality'] + right_img['quality']) / 2)
             self.state['sorted_imgs'].insert(self.state['closest_img_index'] + right - self.state['margin'], curr_img)
             self.compare_imgs()
         else:
             similar_img = self.state['imgs_to_compare'][mid]
             self.render_images(curr_img, similar_img)
-
-    def render(self):
-        print('state {')
-        print('    imgs to comp:', self.state['imgs_to_compare'])
-        print('    left:', self.state['left'])
-        print('    mid:', self.state['mid'])
-        print('    right:', self.state['right'])
-        print('    sorted:', self.state['sorted_imgs'])
-        print('    closest img:', self.state['closest_img_index'])
-        print('    curr:', self.state['curr_img'])
-        print('}')
 
     def save(self):
         #self.state['unsorted_imgs'].append(self.state['curr_img'])
@@ -363,6 +357,7 @@ class Example(QMainWindow, Ui_MainWindow):
         self.state['output_dir'] = 'not_specified'
         self.state['unsorted_imgs'] = []
         self.state['sorted_imgs'] = []
+        self.state['zoommed'] = False
 
     def magnify(self):
         magnifier_window = QDialog()
@@ -387,8 +382,8 @@ class Example(QMainWindow, Ui_MainWindow):
         grid.addWidget(similar_img_lbl, 2, 1)
         grid.addWidget(similar_img_cropped, 2, 2)
 
-        magnifier_window.setGeometry(300, 300, 300, 300)
-        magnifier_window.setFixedSize(QtCore.QSize(300, 300))
+        magnifier_window.setGeometry(300, 300, 300, 400)
+        magnifier_window.setFixedSize(QtCore.QSize(300, 400))
         magnifier_window.setWindowTitle('Images')
         magnifier_window.setWindowModality(QtCore.Qt.ApplicationModal)
         magnifier_window.exec_()
