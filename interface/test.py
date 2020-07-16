@@ -31,8 +31,8 @@ def scale_image(input_image_path,
           'high'.format(wide=width, height=height))
 
 
-inputdir = "D:/Word/big_img/DS20180906120502_Full46786_2Conv_V0_60_R0_200_T0.5e6_Tc1"
-outputdir = "D:/Word/big_img/scaled"
+inputdir = "D:/Word/big_img/DS20180906120034_Full46786_2Conv_V0_60_R0_200_T0.5e6_Tc1-20200715T191756Z-001/DS20180906120034_Full46786_2Conv_V0_60_R0_200_T0.5e6_Tc1"
+outputdir = "D:/Word/big_img/DS20180906120034_Full46786_2Conv_V0_60_R0_200_T0.5e6_Tc1-20200715T191756Z-001/scaled"
 img_names = os.listdir(inputdir)
 w, h = 3449, 7866
 for name in img_names:
