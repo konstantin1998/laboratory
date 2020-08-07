@@ -27,5 +27,3 @@ def tfm(arr, p=0.6):
 
     tfm_arr_cpu = cp.asnumpy(tfm_arr_gpu)
     return tfm_arr_cpu[0]
-
-

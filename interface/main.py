@@ -116,7 +116,6 @@ class Example(QMainWindow, Ui_MainWindow):
         for i in range(len(image_names)):
             item = dict()
             item['name'] = image_names[i]
-            print(os.path.join(self.state['path_to_unsorted_images'], image_names[i]))
             item['quality'] = estimate_quality(os.path.join(self.state['path_to_unsorted_images'], image_names[i]))
             progress_bar.setProperty("value", int((i + 1) / len(image_names) * 100))
             self.state['unsorted_imgs'].append(item)
@@ -155,6 +154,10 @@ class Example(QMainWindow, Ui_MainWindow):
             similar_img_path = 'IQA/images/default1.bmp'
         self.gridLayout.removeItem(self.img_box)
 
+        try:
+            self.curr_img.clear()
+        except:
+            pass
         self.curr_img = QtWidgets.QLabel(self.centralwidget)
         curr_pix_map = QtGui.QPixmap(curr_img_path)
         w, h = curr_pix_map.size().width(), curr_pix_map.size().height()
@@ -170,6 +173,10 @@ class Example(QMainWindow, Ui_MainWindow):
         self.curr_metrix_lbl.setText('Метрика: ' + str(curr_img['quality']))
         self.gridLayout.addWidget(self.curr_metrix_lbl, 1, 4)
 
+        try:
+            self.similar_img.clear()
+        except:
+            pass
         self.similar_img = QtWidgets.QLabel(self.centralwidget)
         similar_pix_map = QtGui.QPixmap(similar_img_path)
         w, h = similar_pix_map.size().width(), similar_pix_map.size().height()
